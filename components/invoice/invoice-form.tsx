@@ -1,7 +1,7 @@
 "use client";
 
 import { useReducer, useEffect, useRef, useCallback, useState } from "react";
-import { Plus, X, ImagePlus, Download, History, Save, FilePlus } from "lucide-react";
+import { Plus, X, ImagePlus, Download, History, Save, FilePlus, Copy } from "lucide-react";
 import {
   invoiceReducer,
   createInitialInvoice,
@@ -42,13 +42,37 @@ export function InvoiceForm() {
     }
   }, []);
 
-  // Logo upload handler
+  // Logo upload handler (with compression)
   function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      dispatch({ type: "SET_LOGO", value: ev.target?.result as string });
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const MAX_SIZE = 400;
+        let { width, height } = img;
+        
+        if (width > MAX_SIZE || height > MAX_SIZE) {
+          if (width > height) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          } else {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        ctx?.drawImage(img, 0, 0, width, height);
+        // Compress to JPEG to save massive amounts of local storage
+        const compressed = canvas.toDataURL("image/jpeg", 0.85);
+        dispatch({ type: "SET_LOGO", value: compressed });
+      };
+      img.src = ev.target?.result as string;
     };
     reader.readAsDataURL(file);
   }
@@ -58,6 +82,14 @@ export function InvoiceForm() {
     const saved = saveInvoice(invoice, currentInvoiceId ?? undefined);
     setCurrentInvoiceId(saved.id);
     setSaveMessage(currentInvoiceId ? "Invoice updated" : "Invoice saved");
+    setTimeout(() => setSaveMessage(null), 2000);
+  }
+
+  // Save as new invoice (duplicate)
+  function handleSaveAsNew() {
+    const saved = saveInvoice(invoice); // Don't pass currentInvoiceId
+    setCurrentInvoiceId(saved.id);
+    setSaveMessage("Saved as new invoice");
     setTimeout(() => setSaveMessage(null), 2000);
   }
 
@@ -122,13 +154,16 @@ export function InvoiceForm() {
       let heightLeft = imgHeight;
       let position = 0;
 
-      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, position, imgWidth, imgHeight);
+      // Compress to JPEG for dramatically smaller PDF size (e.g. 300kb instead of 10mb)
+      const imgData = canvas.toDataURL("image/jpeg", 0.8);
+
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
       while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
-        pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, position, imgWidth, imgHeight);
+        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
       }
 
@@ -169,13 +204,22 @@ export function InvoiceForm() {
           )}
 
           {currentInvoiceId && (
-            <button
-              onClick={handleNewInvoice}
-              className="flex items-center gap-1.5 rounded border border-border bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
-            >
-              <FilePlus className="h-3.5 w-3.5" />
-              New
-            </button>
+            <>
+              <button
+                onClick={handleNewInvoice}
+                className="flex items-center gap-1.5 rounded border border-border bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+              >
+                <FilePlus className="h-3.5 w-3.5" />
+                New
+              </button>
+              <button
+                onClick={handleSaveAsNew}
+                className="flex items-center gap-1.5 rounded border border-emerald-600/20 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Save As
+              </button>
+            </>
           )}
 
           <button
@@ -378,11 +422,11 @@ export function InvoiceForm() {
               <div className="min-w-[600px]">
                 {/* Table header */}
                 <div
-                  className="grid grid-cols-[1fr_80px_100px_140px_32px] items-center gap-0 rounded-t px-0 text-sm font-medium"
+                  className="grid grid-cols-[1fr_70px_130px_130px_80px] items-center gap-0 rounded-t px-0 text-sm font-medium"
                   style={{ backgroundColor: themeColors.bg, color: themeColors.text }}
                 >
                   <div className="px-3 py-2">Item</div>
-                  <div className="px-3 py-2 text-center">Quantity</div>
+                  <div className="px-2 py-2 text-center">Qty</div>
                   <div className="px-3 py-2 text-center">Rate</div>
                   <div className="px-3 py-2 text-right">Amount</div>
                   <div />
@@ -390,16 +434,20 @@ export function InvoiceForm() {
 
                 {/* Line item rows */}
                 <div className="rounded-b border border-t-0 border-border">
-                  {invoice.lineItems.map((item) => (
+                  {invoice.lineItems.map((item, index) => (
                     <LineItemRow
                       key={item.id}
                       item={item}
                       currency={invoice.currency}
                       canDelete={invoice.lineItems.length > 1}
+                      isFirst={index === 0}
+                      isLast={index === invoice.lineItems.length - 1}
                       onUpdate={(field, value) =>
                         dispatch({ type: "UPDATE_LINE_ITEM", id: item.id, field, value })
                       }
                       onDelete={() => dispatch({ type: "REMOVE_LINE_ITEM", id: item.id })}
+                      onMoveUp={() => dispatch({ type: "MOVE_LINE_ITEM", id: item.id, direction: "up" })}
+                      onMoveDown={() => dispatch({ type: "MOVE_LINE_ITEM", id: item.id, direction: "down" })}
                     />
                   ))}
                   <button
@@ -605,6 +653,16 @@ export function InvoiceForm() {
             <Save className="h-4 w-4" />
             {currentInvoiceId ? "Update" : "Save"}
           </button>
+          
+          {currentInvoiceId && (
+            <button
+              onClick={handleSaveAsNew}
+              className="flex flex-1 items-center justify-center gap-2 rounded border border-emerald-600/20 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400"
+            >
+              <Copy className="h-4 w-4" />
+              Save As
+            </button>
+          )}
           <button
             onClick={handleSaveAndDownload}
             disabled={isGeneratingPdf}

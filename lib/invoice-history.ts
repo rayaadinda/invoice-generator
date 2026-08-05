@@ -86,9 +86,14 @@ export function getInvoiceById(id: string): SavedInvoice | null {
   return history.find((inv) => inv.id === id) ?? null;
 }
 
-/** Generate PDF filename: billTo_senderName format */
+/** Generate PDF filename */
 export function generatePdfFilename(invoice: InvoiceData): string {
-  const billTo = (invoice.billTo || "client").trim().replace(/\s+/g, "_").toLowerCase();
-  const sender = (invoice.senderName || "invoice").trim().replace(/\s+/g, "_").toLowerCase();
-  return `${billTo}_${sender}.pdf`;
+  const number = invoice.invoiceNumber ? `#${invoice.invoiceNumber}` : "";
+  const billTo = invoice.billTo ? `- ${invoice.billTo}` : "";
+  
+  let filename = `Invoice ${number} ${billTo}`.trim();
+  // Remove multiple spaces and sanitize invalid file characters
+  filename = filename.replace(/\s+/g, " ").replace(/[\\/:*?"<>|]/g, "");
+  
+  return `${filename}.pdf`;
 }

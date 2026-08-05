@@ -89,6 +89,7 @@ export type InvoiceAction =
   | { type: "SET_THEME"; value: InvoiceTheme }
   | { type: "ADD_LINE_ITEM" }
   | { type: "REMOVE_LINE_ITEM"; id: string }
+  | { type: "MOVE_LINE_ITEM"; id: string; direction: "up" | "down" }
   | { type: "UPDATE_LINE_ITEM"; id: string; field: keyof LineItem; value: string | number }
   | { type: "SET_DISCOUNT"; value: OptionalCharge | null }
   | { type: "SET_TAX"; value: OptionalCharge | null }
@@ -115,6 +116,21 @@ export function invoiceReducer(state: InvoiceData, action: InvoiceAction): Invoi
         ...state,
         lineItems: state.lineItems.filter((item) => item.id !== action.id),
       };
+    case "MOVE_LINE_ITEM": {
+      const index = state.lineItems.findIndex((item) => item.id === action.id);
+      if (index === -1) return state;
+      const newItems = [...state.lineItems];
+      if (action.direction === "up" && index > 0) {
+        const temp = newItems[index - 1];
+        newItems[index - 1] = newItems[index];
+        newItems[index] = temp;
+      } else if (action.direction === "down" && index < newItems.length - 1) {
+        const temp = newItems[index + 1];
+        newItems[index + 1] = newItems[index];
+        newItems[index] = temp;
+      }
+      return { ...state, lineItems: newItems };
+    }
     case "UPDATE_LINE_ITEM":
       return {
         ...state,

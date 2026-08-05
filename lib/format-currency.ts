@@ -8,11 +8,11 @@ export function formatCurrency(amount: number, currencyCode: CurrencyCode): stri
   const config = getCurrencyConfig(currencyCode);
 
   const formatted = new Intl.NumberFormat(config.locale, {
-    minimumFractionDigits: config.code === "JPY" ? 0 : 2,
-    maximumFractionDigits: config.code === "JPY" ? 0 : 2,
+    minimumFractionDigits: config.symbol === "¥" ? 0 : 2,
+    maximumFractionDigits: config.symbol === "¥" ? 0 : 2,
   }).format(amount);
 
-  return `${config.code} ${formatted}`;
+  return `${config.symbol} ${formatted}`;
 }
 
 export function formatCurrencyShort(amount: number, currencyCode: CurrencyCode): string {

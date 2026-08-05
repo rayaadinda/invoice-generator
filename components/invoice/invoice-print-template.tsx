@@ -31,7 +31,7 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
       style={{ minHeight: "297mm", fontFamily: "var(--font-sans), sans-serif" }}
     >
       {/* Header: Logo/Sender (Left) & Invoice Info (Right) */}
-      <div className="flex justify-between items-start mb-12">
+      <div className="flex justify-between items-start mb-6">
         <div className="flex gap-4 items-center">
           {invoice.logo && (
             <img src={invoice.logo} alt="Logo" className="w-16 h-16 object-cover rounded" />
@@ -52,15 +52,15 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
         </div>
       </div>
 
-      <div className="border-b-2 border-zinc-300 mb-8" />
+      <div className="border-b-2 border-zinc-300 mb-6" />
 
       {/* Title */}
-      <h1 className="text-4xl font-normal text-zinc-800 tracking-tight mb-12">
+      <h1 className="text-4xl font-normal text-zinc-800 tracking-tight mb-6">
         INVOICE
       </h1>
 
       {/* Bill To & Payment Info */}
-      <div className="flex justify-between items-start mb-12">
+      <div className="flex justify-between items-start mb-6">
         <div>
           <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">
             Bill To
@@ -95,8 +95,8 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
       </div>
 
       {/* Line Items Table */}
-      <div className="mb-8">
-        <div className="grid grid-cols-[1fr_80px_100px_120px] bg-zinc-50 border-y border-zinc-200 py-3 px-4">
+      <div className="mb-4">
+        <div className="grid grid-cols-[1fr_70px_130px_130px] bg-zinc-50 border-y border-zinc-200 py-2 px-4">
           <div className="text-[10px] font-bold text-zinc-800 uppercase tracking-wider">Item</div>
           <div className="text-[10px] font-bold text-zinc-800 uppercase tracking-wider text-right">Quantity</div>
           <div className="text-[10px] font-bold text-zinc-800 uppercase tracking-wider text-right">Rate</div>
@@ -111,7 +111,7 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
           if (!item.description && amount === 0) return null;
 
           return (
-            <div key={item.id} className={`grid grid-cols-[1fr_80px_100px_120px] py-4 px-4 ${idx !== invoice.lineItems.length - 1 ? 'border-b border-zinc-100' : ''}`}>
+            <div key={item.id} className={`grid grid-cols-[1fr_70px_130px_130px] py-2 px-4 ${idx !== invoice.lineItems.length - 1 ? 'border-b border-zinc-100' : ''}`}>
               <div className="text-sm font-semibold text-zinc-800">{item.description}</div>
               <div className="text-sm text-zinc-600 text-right">{item.quantity}</div>
               <div className="text-sm text-zinc-600 text-right">
@@ -125,10 +125,10 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
         })}
       </div>
 
-      <div className="border-b-2 border-zinc-800 mb-4" />
+      <div className="border-b-2 border-zinc-800 mb-2" />
 
       {/* Totals */}
-      <div className="flex justify-between items-start mb-12">
+      <div className="flex justify-between items-start mb-4">
         <div className="text-lg font-bold text-zinc-600">
           Total
         </div>
@@ -171,9 +171,9 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
       </div>
 
       {/* Notes & Bank Details */}
-      <div className="mt-16 pt-8 border-t border-zinc-200">
+      <div className="mt-8 pt-6 border-t border-zinc-200">
         {(invoice.notes || invoice.terms) && (
-          <div className="grid grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-2 gap-8 mb-6">
             {invoice.notes && (
               <div>
                 <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Notes</div>
@@ -191,30 +191,32 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
 
         {(invoice.bankDetails?.bankName || invoice.bankDetails?.accountHolder || invoice.bankDetails?.accountNumber) && (
           <div>
-            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-3">Bank Transfer Details</div>
-            <div className="bg-zinc-50 p-4 rounded text-sm text-zinc-800 border border-zinc-200">
-              <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-4">Bank Transfer Details</div>
+            <div className="text-sm text-zinc-800">
+              <div className="flex flex-col gap-y-2.5">
                 {invoice.bankDetails.bankName && (
-                  <div className="flex gap-2">
-                    <span className="text-zinc-500 w-24">Bank:</span>
+                  <div className="flex gap-4">
+                    <span className="text-zinc-500 w-28">Bank Name :</span>
                     <span className="font-semibold">{invoice.bankDetails.bankName}</span>
                   </div>
                 )}
                 {invoice.bankDetails.accountHolder && (
-                  <div className="flex gap-2">
-                    <span className="text-zinc-500 w-24">Account Name:</span>
+                  <div className="flex gap-4">
+                    <span className="text-zinc-500 w-28">Account Name :</span>
                     <span className="font-semibold">{invoice.bankDetails.accountHolder}</span>
                   </div>
                 )}
                 {invoice.bankDetails.accountNumber && (
-                  <div className="flex gap-2">
-                    <span className="text-zinc-500 w-24">Account No:</span>
-                    <span className="font-semibold">{invoice.bankDetails.accountNumber}</span>
+                  <div className="flex gap-4 items-center">
+                    <span className="text-zinc-500 w-28">Account No :</span>
+                    <span className="font-semibold text-blue-600 underline tracking-wide">
+                      {invoice.bankDetails.accountNumber}
+                    </span>
                   </div>
                 )}
               </div>
               {invoice.bankDetails.notes && (
-                <div className="mt-4 pt-3 border-t border-zinc-200 text-xs text-zinc-600">
+                <div className="mt-4 pt-4 border-t border-zinc-200 text-xs text-zinc-600 leading-relaxed max-w-[80%]">
                   {invoice.bankDetails.notes}
                 </div>
               )}
