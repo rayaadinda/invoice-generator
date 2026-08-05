@@ -197,7 +197,7 @@ export function InvoiceForm() {
         currentInvoiceId={currentInvoiceId}
       />
 
-      <div className="mx-auto flex w-full max-w-[1200px] gap-6 px-4 lg:px-8">
+      <div className="mx-auto flex w-full max-w-[1200px] gap-6 px-4 pb-24 lg:px-8 lg:pb-0">
         {/* Main invoice area */}
         <div className="min-w-0 flex-1">
           <div
@@ -320,7 +320,7 @@ export function InvoiceForm() {
 
               {/* Right column: Dates */}
               <div className="space-y-3">
-                <div className="grid grid-cols-[120px_1fr] items-center gap-2">
+                <div className="flex flex-col sm:grid sm:grid-cols-[120px_1fr] sm:items-center gap-1 sm:gap-2">
                   <label className="text-sm text-muted-foreground">Date</label>
                   <input
                     type="date"
@@ -328,10 +328,10 @@ export function InvoiceForm() {
                     onChange={(e) =>
                       dispatch({ type: "SET_FIELD", field: "date", value: e.target.value })
                     }
-                    className="invoice-input rounded border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                    className="invoice-input w-full rounded border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
-                <div className="grid grid-cols-[120px_1fr] items-center gap-2">
+                <div className="flex flex-col sm:grid sm:grid-cols-[120px_1fr] sm:items-center gap-1 sm:gap-2">
                   <label className="text-sm text-muted-foreground">Payment Terms</label>
                   <input
                     type="text"
@@ -344,10 +344,10 @@ export function InvoiceForm() {
                       })
                     }
                     placeholder=""
-                    className="invoice-input rounded border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                    className="invoice-input w-full rounded border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
-                <div className="grid grid-cols-[120px_1fr] items-center gap-2">
+                <div className="flex flex-col sm:grid sm:grid-cols-[120px_1fr] sm:items-center gap-1 sm:gap-2">
                   <label className="text-sm text-muted-foreground">Due Date</label>
                   <input
                     type="date"
@@ -355,10 +355,10 @@ export function InvoiceForm() {
                     onChange={(e) =>
                       dispatch({ type: "SET_FIELD", field: "dueDate", value: e.target.value })
                     }
-                    className="invoice-input rounded border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                    className="invoice-input w-full rounded border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
-                <div className="grid grid-cols-[120px_1fr] items-center gap-2">
+                <div className="flex flex-col sm:grid sm:grid-cols-[120px_1fr] sm:items-center gap-1 sm:gap-2">
                   <label className="text-sm text-muted-foreground">PO Number</label>
                   <input
                     type="text"
@@ -367,50 +367,50 @@ export function InvoiceForm() {
                       dispatch({ type: "SET_FIELD", field: "poNumber", value: e.target.value })
                     }
                     placeholder=""
-                    className="invoice-input rounded border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                    className="invoice-input w-full rounded border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
               </div>
             </div>
 
             {/* Line Items */}
-            <div className="mt-8">
-              {/* Table header */}
-              <div
-                className="grid grid-cols-[1fr_80px_100px_140px_32px] items-center gap-0 rounded-t px-0 text-sm font-medium"
-                style={{ backgroundColor: themeColors.bg, color: themeColors.text }}
-              >
-                <div className="px-3 py-2">Item</div>
-                <div className="px-3 py-2 text-center">Quantity</div>
-                <div className="px-3 py-2 text-center">Rate</div>
-                <div className="px-3 py-2 text-right">Amount</div>
-                <div />
-              </div>
+            <div className="mt-8 overflow-x-auto">
+              <div className="min-w-[600px]">
+                {/* Table header */}
+                <div
+                  className="grid grid-cols-[1fr_80px_100px_140px_32px] items-center gap-0 rounded-t px-0 text-sm font-medium"
+                  style={{ backgroundColor: themeColors.bg, color: themeColors.text }}
+                >
+                  <div className="px-3 py-2">Item</div>
+                  <div className="px-3 py-2 text-center">Quantity</div>
+                  <div className="px-3 py-2 text-center">Rate</div>
+                  <div className="px-3 py-2 text-right">Amount</div>
+                  <div />
+                </div>
 
-              {/* Line item rows */}
-              <div className="rounded-b border border-t-0 border-border">
-                {invoice.lineItems.map((item) => (
-                  <LineItemRow
-                    key={item.id}
-                    item={item}
-                    currency={invoice.currency}
-                    canDelete={invoice.lineItems.length > 1}
-                    onUpdate={(field, value) =>
-                      dispatch({ type: "UPDATE_LINE_ITEM", id: item.id, field, value })
-                    }
-                    onDelete={() => dispatch({ type: "REMOVE_LINE_ITEM", id: item.id })}
-                  />
-                ))}
+                {/* Line item rows */}
+                <div className="rounded-b border border-t-0 border-border">
+                  {invoice.lineItems.map((item) => (
+                    <LineItemRow
+                      key={item.id}
+                      item={item}
+                      currency={invoice.currency}
+                      canDelete={invoice.lineItems.length > 1}
+                      onUpdate={(field, value) =>
+                        dispatch({ type: "UPDATE_LINE_ITEM", id: item.id, field, value })
+                      }
+                      onDelete={() => dispatch({ type: "REMOVE_LINE_ITEM", id: item.id })}
+                    />
+                  ))}
+                  <button
+                    onClick={() => dispatch({ type: "ADD_LINE_ITEM" })}
+                    className="flex w-full items-center justify-center gap-2 px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Line Item
+                  </button>
+                </div>
               </div>
-
-              {/* Add line item button */}
-              <button
-                onClick={() => dispatch({ type: "ADD_LINE_ITEM" })}
-                className="mt-0 flex w-full items-center justify-center gap-1.5 rounded-b border border-t-0 border-dashed border-border bg-muted/30 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Line Item
-              </button>
             </div>
 
             {/* Notes / Terms + Totals */}
