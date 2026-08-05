@@ -104,9 +104,12 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
         </div>
 
         {invoice.lineItems.map((item, idx) => {
-          if (!item.description && !item.amount) return null;
           const rate = Number(item.rate) || 0;
-          const amount = Number(item.amount) || 0;
+          const quantity = Number(item.quantity) || 0;
+          const amount = quantity * rate;
+          
+          if (!item.description && amount === 0) return null;
+
           return (
             <div key={item.id} className={`grid grid-cols-[1fr_80px_100px_120px] py-4 px-4 ${idx !== invoice.lineItems.length - 1 ? 'border-b border-zinc-100' : ''}`}>
               <div className="text-sm font-semibold text-zinc-800">{item.description}</div>
@@ -210,9 +213,9 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
                   </div>
                 )}
               </div>
-              {invoice.bankDetails.additionalNotes && (
+              {invoice.bankDetails.notes && (
                 <div className="mt-4 pt-3 border-t border-zinc-200 text-xs text-zinc-600">
-                  {invoice.bankDetails.additionalNotes}
+                  {invoice.bankDetails.notes}
                 </div>
               )}
             </div>
