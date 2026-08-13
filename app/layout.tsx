@@ -33,7 +33,7 @@ export default function RootLayout({
       className={cn("antialiased", fontSans.variable, fontMono.variable)}
     >
       <body className="font-sans">
-        <ThemeProvider defaultTheme="light">{children}</ThemeProvider>
+        <ThemeProvider defaultTheme="dark">{children}</ThemeProvider>
       </body>
     </html>
   );

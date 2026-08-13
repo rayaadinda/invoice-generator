@@ -1,5 +1,11 @@
 "use client";
+import React from "react";
 
+
+import { useParams, useRouter } from "next/navigation";
+import useSWR from "swr";
+import { api, fetcher } from "@/lib/api";
+import { PageHeader } from "@/components/ui/page-header";
 import { useReducer, useEffect, useRef, useCallback, useState } from "react";
 import { Plus, X, ImagePlus, Download, History, Save, FilePlus, Copy } from "lucide-react";
 import {
@@ -19,13 +25,16 @@ import {
   generatePdfFilename,
   type SavedInvoice,
 } from "@/lib/invoice-history";
-import { LineItemRow } from "./line-item-row";
-import { BankDetailsSection } from "./bank-details";
-import { SettingsPanel } from "./settings-panel";
-import { InvoiceHistoryPanel } from "./invoice-history";
-import { InvoicePrintTemplate } from "./invoice-print-template";
+import { LineItemRow } from "@/components/invoice/line-item-row";
+import { BankDetailsSection } from "@/components/invoice/bank-details";
+import { SettingsPanel } from "@/components/invoice/settings-panel";
+import { InvoiceHistoryPanel } from "@/components/invoice/invoice-history";
+import { InvoicePrintTemplate } from "@/components/invoice/invoice-print-template";
 
-export function InvoiceForm() {
+export default function InvoiceDetailPage({ params }: { params: Promise<{ tripId: string, invoiceId: string }> }) {
+  const resolvedParams = React.use(params);
+  const { tripId, invoiceId } = resolvedParams;
+  const router = useRouter();
   const [invoice, dispatch] = useReducer(invoiceReducer, null, createInitialInvoice);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -34,13 +43,49 @@ export function InvoiceForm() {
   const invoiceRef = useRef<HTMLDivElement>(null);
   const printTemplateRef = useRef<HTMLDivElement>(null);
 
-  // Load defaults from localStorage on mount
+  // Fetch invoice data if editing, otherwise load defaults
+  const { data: existingInvoice, isLoading } = useSWR(
+    invoiceId !== "new" ? `/trips/${tripId}/invoices/${invoiceId}` : null,
+    fetcher
+  );
+
   useEffect(() => {
-    const defaults = loadDefaults();
-    if (defaults) {
-      dispatch({ type: "LOAD_DEFAULTS", data: defaults });
+    if (invoiceId === "new") {
+      const defaults = loadDefaults();
+      if (defaults) dispatch({ type: "LOAD_DEFAULTS", data: defaults });
+    } else if (existingInvoice) {
+      // Hydrate from existingInvoice
+      const data = {
+        logo: existingInvoice.metadata?.logo || null,
+        invoiceNumber: existingInvoice.invoiceNumber,
+        senderName: existingInvoice.metadata?.senderName || "",
+        billTo: existingInvoice.metadata?.billTo || "",
+        shipTo: existingInvoice.metadata?.shipTo || "",
+        date: existingInvoice.date.split("T")[0],
+        paymentTerms: existingInvoice.metadata?.paymentTerms || "",
+        dueDate: existingInvoice.dueDate ? existingInvoice.dueDate.split("T")[0] : "",
+        poNumber: existingInvoice.metadata?.poNumber || "",
+        lineItems: existingInvoice.lineItems.map((item: any) => ({
+          id: item.id,
+          description: item.description,
+          quantity: Number(item.quantity),
+          rate: Number(item.rate),
+        })),
+        notes: existingInvoice.notes || "",
+        terms: existingInvoice.terms || "",
+        discount: existingInvoice.metadata?.discount || null,
+        tax: existingInvoice.metadata?.tax || null,
+        shipping: existingInvoice.metadata?.shipping || null,
+        amountPaid: existingInvoice.metadata?.amountPaid || 0,
+        bankDetails: existingInvoice.bankDetails || { bankName: "", accountHolder: "", accountNumber: "", notes: "" },
+        currency: existingInvoice.currency,
+        theme: existingInvoice.metadata?.theme || "slate",
+      };
+      dispatch({ type: "LOAD_DEFAULTS", data });
+      setCurrentInvoiceId(existingInvoice.id);
     }
-  }, []);
+  }, [invoiceId, existingInvoice]);
+
 
   // Logo upload handler (with compression)
   function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -78,46 +123,106 @@ export function InvoiceForm() {
   }
 
   // Save invoice to history
-  function handleSaveInvoice() {
-    const saved = saveInvoice(invoice, currentInvoiceId ?? undefined);
-    setCurrentInvoiceId(saved.id);
-    setSaveMessage(currentInvoiceId ? "Invoice updated" : "Invoice saved");
-    setTimeout(() => setSaveMessage(null), 2000);
+  
+  async function handleSaveInvoice() {
+    try {
+      const payload = {
+        invoiceNumber: invoice.invoiceNumber,
+        date: new Date(invoice.date).toISOString(),
+        dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString() : undefined,
+        notes: invoice.notes,
+        terms: invoice.terms,
+        currency: invoice.currency,
+        bankDetails: invoice.bankDetails,
+        lineItems: invoice.lineItems.map((item: any, index: number) => ({
+          description: item.description,
+          quantity: item.quantity,
+          rate: item.rate,
+          sortOrder: index,
+        })),
+        metadata: {
+          logo: invoice.logo,
+          senderName: invoice.senderName,
+          billTo: invoice.billTo,
+          shipTo: invoice.shipTo,
+          paymentTerms: invoice.paymentTerms,
+          poNumber: invoice.poNumber,
+          discount: invoice.discount,
+          tax: invoice.tax,
+          shipping: invoice.shipping,
+          amountPaid: invoice.amountPaid,
+          theme: invoice.theme,
+        },
+      };
+
+      if (invoiceId === "new") {
+        const res = await api.post(`/trips/${tripId}/invoices`, payload);
+        alert("Invoice created successfully");
+        router.push(`/dashboard/trips/${tripId}/invoices/${res.data.id}`);
+      } else {
+        await api.put(`/trips/${tripId}/invoices/${invoiceId}`, payload);
+        alert("Invoice updated successfully");
+      }
+    } catch (err) {
+      alert("Failed to save invoice");
+      console.error(err);
+    }
   }
 
-  // Save as new invoice (duplicate)
-  function handleSaveAsNew() {
-    const saved = saveInvoice(invoice); // Don't pass currentInvoiceId
-    setCurrentInvoiceId(saved.id);
-    setSaveMessage("Saved as new invoice");
-    setTimeout(() => setSaveMessage(null), 2000);
+  async function handleSaveAsNew() {
+    try {
+      const payload = {
+        invoiceNumber: invoice.invoiceNumber + "-COPY",
+        date: new Date(invoice.date).toISOString(),
+        dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString() : undefined,
+        notes: invoice.notes,
+        terms: invoice.terms,
+        currency: invoice.currency,
+        bankDetails: invoice.bankDetails,
+        lineItems: invoice.lineItems.map((item: any, index: number) => ({
+          description: item.description,
+          quantity: item.quantity,
+          rate: item.rate,
+          sortOrder: index,
+        })),
+        metadata: {
+          logo: invoice.logo,
+          senderName: invoice.senderName,
+          billTo: invoice.billTo,
+          shipTo: invoice.shipTo,
+          paymentTerms: invoice.paymentTerms,
+          poNumber: invoice.poNumber,
+          discount: invoice.discount,
+          tax: invoice.tax,
+          shipping: invoice.shipping,
+          amountPaid: invoice.amountPaid,
+          theme: invoice.theme,
+        },
+      };
+      
+      const res = await api.post(`/trips/${tripId}/invoices`, payload);
+      alert("Saved as new invoice");
+      router.push(`/dashboard/trips/${tripId}/invoices/${res.data.id}`);
+    } catch (err) {
+      alert("Failed to save invoice");
+      console.error(err);
+    }
   }
 
   // Save + Download PDF
   const handleSaveAndDownload = useCallback(async () => {
     // Save first
-    const saved = saveInvoice(invoice, currentInvoiceId ?? undefined);
-    setCurrentInvoiceId(saved.id);
+    await handleSaveInvoice();
 
     // Then download
     await handleDownloadPdf();
-  }, [invoice, currentInvoiceId]);
-
-  // Load invoice from history
-  function handleLoadInvoice(saved: SavedInvoice) {
-    dispatch({ type: "LOAD_DEFAULTS", data: saved.data });
-    setCurrentInvoiceId(saved.id);
-  }
+  }, [invoice, invoiceId, tripId]);
 
   // New invoice
   function handleNewInvoice() {
     dispatch({ type: "RESET" });
     setCurrentInvoiceId(null);
-    // Reload defaults (sender name, bank details etc.)
-    const defaults = loadDefaults();
-    if (defaults) {
-      dispatch({ type: "LOAD_DEFAULTS", data: defaults });
-    }
+    router.push(`/dashboard/trips/${tripId}/invoices/new`);
   }
 
   // PDF download handler
@@ -189,59 +294,53 @@ export function InvoiceForm() {
   return (
     <>
       {/* Top bar with history toggle */}
-      <div className="no-print mx-auto flex w-full max-w-[1200px] items-center justify-between px-4 pb-4 lg:px-8">
-        <button
-          onClick={() => setHistoryOpen(true)}
-          className="flex items-center gap-2 rounded border border-border bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
-        >
-          <History className="h-4 w-4 text-muted-foreground" />
-          Invoice History
-        </button>
-
-        <div className="flex items-center gap-2">
-          {saveMessage && (
-            <span className="text-xs font-medium text-emerald-600">{saveMessage}</span>
-          )}
-
-          {currentInvoiceId && (
-            <>
+      
+      <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 lg:px-0">
+        <PageHeader 
+          title={invoiceId === "new" ? "Create Invoice" : "Edit Invoice"}
+          breadcrumbs={[
+            { label: "Trips", href: "/dashboard/trips" },
+            { label: "Trip", href: `/dashboard/trips/${tripId}` },
+            { label: "Invoices", href: `/dashboard/trips/${tripId}/invoices` },
+            { label: invoiceId === "new" ? "New" : existingInvoice?.invoiceNumber || "Edit" }
+          ]}
+          actions={
+            <div className="flex items-center gap-2">
+              {invoiceId !== "new" && (
+                <>
+                  <button
+                    onClick={() => router.push(`/dashboard/trips/${tripId}/invoices/new`)}
+                    className="flex items-center gap-1.5 rounded border border-border bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+                  >
+                    <FilePlus className="h-3.5 w-3.5" />
+                    New
+                  </button>
+                  <button
+                    onClick={handleSaveAsNew}
+                    className="flex items-center gap-1.5 rounded border border-emerald-600/20 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Save As
+                  </button>
+                </>
+              )}
               <button
-                onClick={handleNewInvoice}
-                className="flex items-center gap-1.5 rounded border border-border bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+                onClick={handleSaveInvoice}
+                className="flex items-center gap-1.5 rounded bg-emerald-600 px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-emerald-700"
               >
-                <FilePlus className="h-3.5 w-3.5" />
-                New
+                <Save className="h-3.5 w-3.5" />
+                {invoiceId !== "new" ? "Update" : "Save"}
               </button>
-              <button
-                onClick={handleSaveAsNew}
-                className="flex items-center gap-1.5 rounded border border-emerald-600/20 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400"
-              >
-                <Copy className="h-3.5 w-3.5" />
-                Save As
-              </button>
-            </>
-          )}
-
-          <button
-            onClick={handleSaveInvoice}
-            className="flex items-center gap-1.5 rounded bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
-          >
-            <Save className="h-3.5 w-3.5" />
-            {currentInvoiceId ? "Update" : "Save"}
-          </button>
-        </div>
+            </div>
+          }
+        />
       </div>
 
-      {/* History panel */}
-      <InvoiceHistoryPanel
-        isOpen={historyOpen}
-        onClose={() => setHistoryOpen(false)}
-        onLoadInvoice={handleLoadInvoice}
-        onNewInvoice={handleNewInvoice}
-        currentInvoiceId={currentInvoiceId}
-      />
 
-      <div className="mx-auto flex w-full max-w-[1200px] gap-6 px-4 pb-24 lg:px-8 lg:pb-0">
+      {/* History panel */}
+      
+
+      <div className="flex w-full gap-6 pb-24 lg:pb-0">
         {/* Main invoice area */}
         <div className="min-w-0 flex-1">
           <div
@@ -648,7 +747,7 @@ export function InvoiceForm() {
         <div className="no-print fixed bottom-0 left-0 right-0 z-30 flex items-center gap-2 border-t border-border bg-card px-4 py-3 lg:hidden">
           <button
             onClick={handleSaveInvoice}
-            className="flex flex-1 items-center justify-center gap-2 rounded bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+            className="flex flex-1 items-center justify-center gap-2 rounded bg-emerald-600 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-emerald-700"
           >
             <Save className="h-4 w-4" />
             {currentInvoiceId ? "Update" : "Save"}
@@ -686,7 +785,7 @@ export function InvoiceForm() {
           opacity: 0.001,
         }}
       >
-        <div ref={printTemplateRef} className="bg-white">
+        <div ref={printTemplateRef} className="bg-primary">
           <InvoicePrintTemplate invoice={invoice} />
         </div>
       </div>

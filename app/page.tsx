@@ -1,9 +1,5 @@
-import { InvoiceForm } from "@/components/invoice/invoice-form";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return (
-    <main className="min-h-dvh py-6">
-      <InvoiceForm />
-    </main>
-  );
+  redirect("/dashboard");
 }

@@ -27,7 +27,7 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
   return (
     <div
       id="invoice-print-template"
-      className="w-[210mm] bg-white text-black p-[20mm]"
+      className="w-[210mm] bg-primary text-primary-foreground p-[20mm]"
       style={{ minHeight: "297mm", fontFamily: "var(--font-sans), sans-serif" }}
     >
       {/* Header: Logo/Sender (Left) & Invoice Info (Right) */}
@@ -43,7 +43,7 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
           )}
         </div>
         <div className="text-right">
-          <div className="text-sm font-bold text-zinc-800">
+          <div className="text-sm font-semibold text-zinc-800">
             # {invoice.invoiceNumber || "001"}
           </div>
           <div className="text-sm text-zinc-500 mt-1">
@@ -62,7 +62,7 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
       {/* Bill To & Payment Info */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">
+          <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">
             Bill To
           </div>
           <div className="text-sm font-semibold text-zinc-800">
@@ -75,7 +75,7 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
           )}
         </div>
         <div className="text-right">
-          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">
+          <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">
             Payment
           </div>
           <div className="text-sm text-zinc-600">
@@ -97,10 +97,10 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
       {/* Line Items Table */}
       <div className="mb-4">
         <div className="grid grid-cols-[1fr_70px_130px_130px] bg-zinc-50 border-y border-zinc-200 py-2 px-4">
-          <div className="text-[10px] font-bold text-zinc-800 uppercase tracking-wider">Item</div>
-          <div className="text-[10px] font-bold text-zinc-800 uppercase tracking-wider text-right">Quantity</div>
-          <div className="text-[10px] font-bold text-zinc-800 uppercase tracking-wider text-right">Rate</div>
-          <div className="text-[10px] font-bold text-zinc-800 uppercase tracking-wider text-right">Amount</div>
+          <div className="text-[10px] font-semibold text-zinc-800 uppercase tracking-wider">Item</div>
+          <div className="text-[10px] font-semibold text-zinc-800 uppercase tracking-wider text-right">Quantity</div>
+          <div className="text-[10px] font-semibold text-zinc-800 uppercase tracking-wider text-right">Rate</div>
+          <div className="text-[10px] font-semibold text-zinc-800 uppercase tracking-wider text-right">Amount</div>
         </div>
 
         {invoice.lineItems.map((item, idx) => {
@@ -129,7 +129,7 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
 
       {/* Totals */}
       <div className="flex justify-between items-start mb-4">
-        <div className="text-lg font-bold text-zinc-600">
+        <div className="text-lg font-semibold text-zinc-600">
           Total
         </div>
         <div className="w-1/2">
@@ -151,7 +151,7 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
               <span>{formatCurrency(invoice.shipping, invoice.currency)}</span>
             </div>
           )}
-          <div className="flex justify-end text-lg font-bold text-zinc-800 mt-2">
+          <div className="flex justify-end text-lg font-semibold text-zinc-800 mt-2">
             {formatCurrency(total, invoice.currency)}
           </div>
           {invoice.amountPaid > 0 && (
@@ -161,7 +161,7 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
                 <span>{formatCurrency(invoice.amountPaid, invoice.currency)}</span>
               </div>
               <div className="border-t border-zinc-200 my-2" />
-              <div className="flex justify-between text-base font-bold text-zinc-800">
+              <div className="flex justify-between text-base font-semibold text-zinc-800">
                 <span>Balance Due</span>
                 <span>{formatCurrency(balanceDue, invoice.currency)}</span>
               </div>
@@ -176,13 +176,13 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
           <div className="grid grid-cols-2 gap-8 mb-6">
             {invoice.notes && (
               <div>
-                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Notes</div>
+                <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">Notes</div>
                 <div className="text-xs text-zinc-600 whitespace-pre-wrap">{invoice.notes}</div>
               </div>
             )}
             {invoice.terms && (
               <div>
-                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Terms</div>
+                <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">Terms</div>
                 <div className="text-xs text-zinc-600 whitespace-pre-wrap">{invoice.terms}</div>
               </div>
             )}
@@ -191,7 +191,7 @@ export function InvoicePrintTemplate({ invoice }: { invoice: InvoiceData }) {
 
         {(invoice.bankDetails?.bankName || invoice.bankDetails?.accountHolder || invoice.bankDetails?.accountNumber) && (
           <div>
-            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-4">Bank Transfer Details</div>
+            <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-4">Bank Transfer Details</div>
             <div className="text-sm text-zinc-800">
               <div className="flex flex-col gap-y-2.5">
                 {invoice.bankDetails.bankName && (
